@@ -1,9 +1,13 @@
 package com.example.lr4
+
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -56,6 +60,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.lr4.ui.theme.Lr4Theme
 
 class MainActivity : ComponentActivity() {
@@ -73,8 +78,10 @@ class MainActivity : ComponentActivity() {
 fun Main() {
     val navController = rememberNavController()
     Column(Modifier.padding(8.dp)) {
-        NavHost(navController, startDestination = NavRoutes.Home.route, modifier
-        = Modifier.weight(1f)) {
+        NavHost(
+            navController, startDestination = NavRoutes.Home.route, modifier
+            = Modifier.weight(1f)
+        ) {
             composable(NavRoutes.Home.route) { Greeting() }
             composable(NavRoutes.Lists.route) { Lists() }
             composable(NavRoutes.Imgs.route) { Imgs() }
@@ -86,14 +93,15 @@ fun Main() {
 
 @Composable
 fun Greeting(modifier: Modifier = Modifier) {
-    Column (modifier = Modifier
-        .fillMaxSize()
-        .background(Color(0xFFDBD6F3)),
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFDBD6F3)),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        var textValue by rememberSaveable{ mutableStateOf("") }
-        val MyName by remember{mutableStateOf("Демидовец Владислава Валерьевна")}
+        var textValue by rememberSaveable { mutableStateOf("") }
+        val MyName by remember { mutableStateOf("Демидовец Владислава Валерьевна") }
         Text(
             text = textValue,
             modifier = modifier.padding(3.dp),
@@ -132,7 +140,7 @@ fun Greeting(modifier: Modifier = Modifier) {
 
 @Composable
 @OptIn(ExperimentalFoundationApi::class)
-fun Lists(modifier: Modifier = Modifier){
+fun Lists(modifier: Modifier = Modifier) {
     // Исходные данные
     val books = listOf(
         Book("George Orwell", "1984"),
@@ -148,7 +156,9 @@ fun Lists(modifier: Modifier = Modifier){
 
     LazyColumn(
         contentPadding = PaddingValues(5.dp),
-        modifier = Modifier.fillMaxSize().background(Color(0xFFDBD6F3))
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFDBD6F3))
     ) {
         groupedBooks.forEach { (author, booksByAuthor) ->
             stickyHeader {
@@ -177,9 +187,10 @@ fun Lists(modifier: Modifier = Modifier){
 data class Book(val author: String, val name: String)
 
 @Composable
-fun Imgs(modifier: Modifier = Modifier){
+fun Imgs(modifier: Modifier = Modifier) {
     val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE // Проверка на альбомную ориентацию
+    val isLandscape =
+        configuration.orientation == Configuration.ORIENTATION_LANDSCAPE // Проверка на альбомную ориентацию
 
     // Установка высоты изображения и начальных/конечных отступов в зависимости от ориентации
     val imageHeight = if (isLandscape) 120 else 360 // измените высоту для альбомной ориентации
@@ -203,7 +214,9 @@ fun Imgs(modifier: Modifier = Modifier){
     )
 
     Box(
-        modifier = modifier.fillMaxSize().background(Color(0xFFDBD6F3)),
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFDBD6F3)),
     ) {
         Image(
             painter = painterResource(id = R.drawable.leon),
@@ -234,7 +247,42 @@ fun Imgs(modifier: Modifier = Modifier){
 }
 
 @Composable
-fun Picks(modifier: Modifier = Modifier){
+fun Picks(modifier: Modifier = Modifier) {
+    var imageUri by remember { mutableStateOf<Uri?>(null) }
+    var hasImage by remember { mutableStateOf(false) }
+    var currentUri by remember { mutableStateOf<Uri?>(null) }
+
+    val imagePicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent(),
+        onResult = { uri: Uri? ->
+            hasImage = uri != null
+            imageUri = uri
+        }
+    )
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFFDBD6F3)),
+    ) {
+        if (hasImage && imageUri != null) {
+            AsyncImage(
+                model = imageUri,
+                modifier = Modifier.fillMaxWidth().align(Alignment.Center),
+                contentDescription = "Selected Image"
+            )
+        }
+        Column(modifier=Modifier.align(Alignment.BottomCenter).padding(bottom = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,) {
+            Button(onClick = { imagePicker.launch("image/*") },) {
+                Text(text = "Выбрать изображение")
+            }
+//            Button(modifier = Modifier.padding(top = 16.dp),
+//                onClick = { /* TODO */ },
+//            ) {
+//                Text(text = "Сделать снимок")
+//            }
+        }
+    }
 
 }
 
@@ -249,14 +297,16 @@ fun BottomNavigationBar(navController: NavController) {
                 onClick = {
                     navController.navigate(navItem.route) {
                         popUpTo(navController.graph.findStartDestination().id)
-                        {saveState = true}
+                        { saveState = true }
                         launchSingleTop = true
                         restoreState = true
                     }
                 },
                 icon = {
-                    Icon(imageVector = navItem.image,
-                        contentDescription = navItem.title)
+                    Icon(
+                        imageVector = navItem.image,
+                        contentDescription = navItem.title
+                    )
                 },
                 label = {
                     Text(text = navItem.title)
@@ -284,12 +334,13 @@ object NavBarItems {
             route = "imgs"
         ),
         BarItem(
-            title = "Piks",
+            title = "Picks",
             image = Icons.Filled.CheckCircle,
-            route = "piks"
+            route = "picks"
         )
     )
 }
+
 data class BarItem(
     val title: String,
     val image: ImageVector,
@@ -308,6 +359,6 @@ sealed class NavRoutes(val route: String) {
 @Composable
 fun MainPreview() {
     Lr4Theme {
-        Lists()
+        Picks()
     }
 }
