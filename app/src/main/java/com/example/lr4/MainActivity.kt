@@ -1,8 +1,11 @@
 package com.example.lr4
 
+import android.content.Context
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
@@ -49,11 +52,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -62,6 +68,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.lr4.ui.theme.Lr4Theme
+import java.io.File
 
 class MainActivity : ComponentActivity() {
 
@@ -246,11 +253,34 @@ fun Imgs(modifier: Modifier = Modifier) {
     }
 }
 
+class ComposeFileProvider : FileProvider(R.xml.files_paths) {
+    companion object {
+        fun getImageUri(context: Context): Uri {
+            val directory = File(context.cacheDir, "images")
+            directory.mkdirs()
+            val file = File.createTempFile(
+                "selected_image_",
+                ".jpg",
+                directory,
+            )
+            val authority = context.packageName + ".fileprovider"
+            return getUriForFile(
+                context,
+                authority,
+                file,
+            )
+        }
+    }
+}
+
+
 @Composable
 fun Picks(modifier: Modifier = Modifier) {
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var hasImage by remember { mutableStateOf(false) }
     var currentUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+
 
     val imagePicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
@@ -259,6 +289,29 @@ fun Picks(modifier: Modifier = Modifier) {
             imageUri = uri
         }
     )
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            hasImage = success
+            if (success) {
+                imageUri = currentUri
+            }
+        }
+    )
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+        onResult ={ isGranted ->
+            if (isGranted) {
+                Toast.makeText(context, "Разрешение получено", Toast.LENGTH_SHORT).show()
+// Запуск камеры с текущим Uri
+                currentUri?.let { cameraLauncher.launch(it) }
+            } else {
+                Toast.makeText(context,"В разрешении отказано",Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -276,11 +329,20 @@ fun Picks(modifier: Modifier = Modifier) {
             Button(onClick = { imagePicker.launch("image/*") },) {
                 Text(text = "Выбрать изображение")
             }
-//            Button(modifier = Modifier.padding(top = 16.dp),
-//                onClick = { /* TODO */ },
-//            ) {
-//                Text(text = "Сделать снимок")
-//            }
+
+            Button(modifier = Modifier.padding(top = 16.dp),
+                onClick = {
+                    // Создаем новый Uri для каждого снимка
+                    currentUri = ComposeFileProvider.getImageUri(context)
+                    val permissionCheckResult = ContextCompat.checkSelfPermission(
+                        context,android.Manifest.permission.CAMERA)
+                    if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                        cameraLauncher.launch(currentUri!!) }
+                    else {permissionLauncher.launch(android.Manifest.permission.CAMERA) }
+                }
+            ) {
+                Text(text = "Сделать снимок")
+            }
         }
     }
 
