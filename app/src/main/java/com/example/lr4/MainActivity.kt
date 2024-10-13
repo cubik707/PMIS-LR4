@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Menu
@@ -77,6 +78,7 @@ fun Main() {
             composable(NavRoutes.Home.route) { Greeting() }
             composable(NavRoutes.Lists.route) { Lists() }
             composable(NavRoutes.Imgs.route) { Imgs() }
+            composable(NavRoutes.Picks.route) { Picks() }
         }
         BottomNavigationBar(navController = navController)
     }
@@ -231,6 +233,10 @@ fun Imgs(modifier: Modifier = Modifier){
     }
 }
 
+@Composable
+fun Picks(modifier: Modifier = Modifier){
+
+}
 
 @Composable
 fun BottomNavigationBar(navController: NavController) {
@@ -276,6 +282,11 @@ object NavBarItems {
             title = "Imgs",
             image = Icons.Filled.Face,
             route = "imgs"
+        ),
+        BarItem(
+            title = "Piks",
+            image = Icons.Filled.CheckCircle,
+            route = "piks"
         )
     )
 }
@@ -289,6 +300,7 @@ sealed class NavRoutes(val route: String) {
     object Home : NavRoutes("home")
     object Lists : NavRoutes("lists")
     object Imgs : NavRoutes("imgs")
+    object Picks : NavRoutes("picks")
 }
 
 
