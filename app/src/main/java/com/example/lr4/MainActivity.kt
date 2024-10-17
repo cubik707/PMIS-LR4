@@ -276,9 +276,9 @@ class ComposeFileProvider : FileProvider(R.xml.files_paths) {
 
 @Composable
 fun Picks(modifier: Modifier = Modifier) {
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var hasImage by remember { mutableStateOf(false) }
-    var currentUri by remember { mutableStateOf<Uri?>(null) }
+    var imageUri by rememberSaveable { mutableStateOf<Uri?>(null) }
+    var hasImage by rememberSaveable { mutableStateOf(false) }
+    var currentUri by rememberSaveable { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
 
 
